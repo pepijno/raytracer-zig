@@ -3,6 +3,7 @@ const Vec3 = @import("vector3.zig").Vec3;
 const Camera = @import("camera.zig").Camera;
 const Ray = @import("ray.zig").Ray;
 const Sphere = @import("object.zig").Sphere;
+const Object = @import("object.zig").Object;
 const Scene = @import("scene.zig").Scene;
 
 const c = @cImport({
@@ -46,7 +47,7 @@ pub fn main() anyerror!void {
         return error.SDLInitializationFailed;
     };
 
-    const origin: Vec3 = .{ .x = 0.0, .y = 1.0, .z = -3.0 };
+    const origin: Vec3 = .{ .x = 0.0, .y = 1.0, .z = -6.0 };
     const lookAt: Vec3 = .{ .x = 0.0, .y = 1.0, .z = 0.0 };
     const vup: Vec3 = .{ .x = 0.0, .y = 1.0, .z = 0.0 };
     const focusDistance: f32 = 1.0;
@@ -58,21 +59,63 @@ pub fn main() anyerror!void {
     var scene: Scene = Scene.init();
     defer scene.deinit();
 
-    const sphere: Sphere = .{
-        .origin = .{ .x = 0.0, .y = 1.0, .z = 0.0 },
-        .radius = 2.0,
-        .material = .{
-            .color = .{
-                .red = 1.0,
-                .green = 0.0,
-                .blue = 0.0,
+    try scene.objects.append(Object{
+        .sphere = .{
+            .origin = .{
+                .x = 0.0,
+                .y = 1.0,
+                .z = 0.0,
+            },
+            .radius = 2.0,
+            .material = .{
+                .color = .{
+                    .red = 1.0,
+                    .green = 0.0,
+                    .blue = 0.0,
+                },
             },
         },
-    };
-
-    try scene.objects.append(sphere);
+    });
+    try scene.objects.append(Object{
+        .sphere = .{
+            .origin = .{
+                .x = 4.0,
+                .y = 1.0,
+                .z = 2.0,
+            },
+            .radius = 2.0,
+            .material = .{
+                .color = .{
+                    .red = 1.0,
+                    .green = 0.0,
+                    .blue = 1.0,
+                },
+            },
+        },
+    });
+    try scene.objects.append(Object{
+        .plane = .{
+            .position = .{
+                .x = 0.0,
+                .y = -1.0,
+                .z = 0.0,
+            },
+            .normal = .{
+                .x = 0.0,
+                .y = 1.0,
+                .z = 0.0,
+            },
+            .material = .{
+                .color = .{
+                    .red = 0.0,
+                    .green = 1.0,
+                    .blue = 1.0,
+                },
+            },
+        },
+    });
     try scene.lights.append(.{
-        .x = 2.0,
+        .x = 5.0,
         .y = 2.0,
         .z = -3.0,
     });

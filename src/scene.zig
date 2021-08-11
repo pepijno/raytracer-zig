@@ -1,18 +1,19 @@
 const std = @import("std");
 const ArrayList = std.ArrayList;
 const Sphere = @import("object.zig").Sphere;
+const Object = @import("object.zig").Object;
 const Intersection = @import("object.zig").Intersection;
 const Color = @import("color.zig").Color;
 const Ray = @import("ray.zig").Ray;
 const Vec3 = @import("vector3.zig").Vec3;
 
 pub const Scene = struct {
-    objects: ArrayList(Sphere),
+    objects: ArrayList(Object),
     lights: ArrayList(Vec3),
 
     pub fn init() Scene {
         return .{
-            .objects = ArrayList(Sphere).init(std.testing.allocator),
+            .objects = ArrayList(Object).init(std.testing.allocator),
             .lights = ArrayList(Vec3).init(std.testing.allocator),
         };
     }
