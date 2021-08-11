@@ -49,10 +49,7 @@ pub const Scene = struct {
 
         for (self.lights.items) |light| {
             const lightDirection = light.subtract(intersection.hitPoint).normalized();
-            const ray = Ray{
-                .origin = intersection.hitPoint.add(lightDirection.multiply(1e-4)),
-                .direction = lightDirection,
-            };
+            const ray = Ray.new(intersection.hitPoint, lightDirection);
 
             if (self.intersectAny(ray)) |newIntersection| {
                 if (newIntersection.hitPoint.subtract(intersection.hitPoint).lengthSquared() < light.subtract(intersection.hitPoint).lengthSquared()) {
@@ -71,9 +68,28 @@ pub const Scene = struct {
         return totalDiffuseColor.add(totalSpecularColor);
     }
 
+    fn reflectedColor(self: *const Scene, ray: Ray, intersection: Intersection, depth: u8) Color {
+        if (intersection.material.reflectColor.max() > 0.0) {
+            const reflectRay = ray.reflect(intersection.hitPoint, intersection.hitNormal);
+            return intersection.material.reflectColor.pointwiseMultiply(self.traceRay(reflectRay, depth + 1));
+        } else {
+            return Color.black();
+        }
+    }
+
     pub fn traceRay(self: *const Scene, ray: Ray, depth: u8) Color {
+        if (depth >= 5) {
+            return Color.black();
+        }
+
         if (self.intersectAny(ray)) |intersection| {
-            return self.directIllumination(ray.direction, intersection);
+            if (intersection.material.refractiveIndex == 0.0) {
+                const directIlluminationColor = self.directIllumination(ray.direction, intersection);
+                const reflectColor = self.reflectedColor(ray, intersection, depth);
+                return directIlluminationColor.add(reflectColor);
+            } else {
+                return Color.black();
+            }
         } else {
             return Color.black();
         }

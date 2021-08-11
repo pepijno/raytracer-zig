@@ -15,7 +15,7 @@ const c = @cImport({
 
 const SDL_WINDOWPOS_UNDEFINED = @bitCast(c_int, c.SDL_WINDOWPOS_UNDEFINED_MASK);
 
-const size: c_int = 200;
+const size: c_int = 400;
 const aspectRatio = 2.0;
 const windowHeight: c_int = 2 * size;
 const windowWidth: c_int = @floatToInt(c_int, 2.0 * aspectRatio) * size;
@@ -31,6 +31,16 @@ fn setPixel(surf: *c.SDL_Surface, x: c_int, y: c_int, pixel: u32) void {
         @intCast(usize, y) * @intCast(usize, surf.pitch) +
         @intCast(usize, x) * 4;
     @intToPtr(*u32, target_pixel).* = pixel;
+}
+
+fn createCamera() Camera {
+    const origin: Vec3 = .{ .x = 7.0, .y = 2.0, .z = 5.0 };
+    const lookAt: Vec3 = .{ .x = 3.0, .y = 0.0, .z = 0.0 };
+    const vup: Vec3 = .{ .x = 0.0, .y = 1.0, .z = 0.0 };
+    const focusDistance: f32 = @sqrt(origin.subtract(lookAt).lengthSquared());
+    const fieldOfView: f32 = 90.0;
+    const aperture: f32 = 0.8;
+    return Camera.new(origin, lookAt, vup, fieldOfView, aspectRatio, aperture, focusDistance);
 }
 
 pub fn main() anyerror!void {
@@ -50,13 +60,7 @@ pub fn main() anyerror!void {
         return error.SDLInitializationFailed;
     };
 
-    const origin: Vec3 = .{ .x = 0.0, .y = 1.0, .z = -6.0 };
-    const lookAt: Vec3 = .{ .x = 0.0, .y = 1.0, .z = 0.0 };
-    const vup: Vec3 = .{ .x = 0.0, .y = 1.0, .z = 0.0 };
-    const focusDistance: f32 = @sqrt(origin.subtract(lookAt).lengthSquared());
-    const fieldOfView: f32 = 90.0;
-    const aperture: f32 = 0.8;
-    const camera: Camera = Camera.new(origin, lookAt, vup, fieldOfView, aspectRatio, aperture, focusDistance);
+    const camera = createCamera();
 
     var scene: Scene = Scene.init();
     defer scene.deinit();
@@ -65,34 +69,43 @@ pub fn main() anyerror!void {
         .diffuseColor = .{ .red = 0.1, .green = 0.1, .blue = 0.15 },
         .reflectColor = .{ .red = 0.85, .green = 0.85, .blue = 0.85 },
         .specularExponent = 50.0,
+        .refractiveIndex = 0.0,
     };
 
     const rubber = Material{
         .diffuseColor = .{ .red = 0.3, .green = 0.1, .blue = 0.1 },
         .reflectColor = Color.black(),
         .specularExponent = 1000000000000.0,
+        .refractiveIndex = 0.0,
+    };
+
+    const glass = Material{
+        .diffuseColor = .{ .red = 0.6, .green = 0.7, .blue = 0.8 },
+        .reflectColor = Color.black(),
+        .specularExponent = 125.0,
+        .refractiveIndex = 1.5,
     };
 
     try scene.objects.append(Object{
         .sphere = .{
             .origin = .{
-                .x = 0.0,
-                .y = 1.0,
-                .z = 0.0,
+                .x = -1.0,
+                .y = 0.0,
+                .z = -2.0,
             },
-            .radius = 2.0,
+            .radius = 1.0,
             .material = ivory,
         },
     });
     try scene.objects.append(Object{
         .sphere = .{
             .origin = .{
-                .x = 4.0,
-                .y = 1.0,
-                .z = 2.0,
+                .x = 3.0,
+                .y = 0.0,
+                .z = 0.0,
             },
-            .radius = 2.0,
-            .material = ivory,
+            .radius = 1.0,
+            .material = glass,
         },
     });
     try scene.objects.append(Object{
@@ -112,8 +125,13 @@ pub fn main() anyerror!void {
     });
     try scene.lights.append(.{
         .x = 5.0,
-        .y = 2.0,
-        .z = -3.0,
+        .y = 10.0,
+        .z = -4.0,
+    });
+    try scene.lights.append(.{
+        .x = -4.0,
+        .y = 12.0,
+        .z = 3.0,
     });
 
     var y: i32 = 0;

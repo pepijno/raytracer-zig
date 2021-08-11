@@ -53,10 +53,29 @@ pub const Color = struct {
             .blue = self.blue * factor,
         };
     }
+
+    pub fn pointwiseMultiply(self: *const Color, other: Color) Color {
+        return .{
+            .red = self.red * other.red,
+            .green = self.green * other.green,
+            .blue = self.blue * other.blue,
+        };
+    }
+
+    pub fn max(self: *const Color) f32 {
+        if (self.red > self.green and self.red > self.blue) {
+            return self.red;
+        }
+        if (self.green > self.blue) {
+            return self.green;
+        }
+        return self.blue;
+    }
 };
 
 pub const Material = struct {
     diffuseColor: Color,
     reflectColor: Color,
     specularExponent: f32,
+    refractiveIndex: f32,
 };
