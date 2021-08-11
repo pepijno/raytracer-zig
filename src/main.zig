@@ -3,6 +3,7 @@ const Vec3 = @import("vector3.zig").Vec3;
 const Camera = @import("camera.zig").Camera;
 const Ray = @import("ray.zig").Ray;
 const Sphere = @import("object.zig").Sphere;
+const Scene = @import("scene.zig").Scene;
 
 const c = @cImport({
     @cInclude("SDL.h");
@@ -54,6 +55,9 @@ pub fn main() anyerror!void {
     const aperture: f32 = 0.8;
     const camera: Camera = Camera.new(origin, lookAt, vup, fieldOfView, aspectRatio, aperture, focusDistance);
 
+    var scene: Scene = Scene.init();
+    defer scene.deinit();
+
     const sphere: Sphere = .{
         .origin = .{ .x = 0.0, .y = 1.0, .z = 0.0 },
         .radius = 2.0,
@@ -66,6 +70,13 @@ pub fn main() anyerror!void {
         },
     };
 
+    try scene.objects.append(sphere);
+    try scene.lights.append(.{
+        .x = 2.0,
+        .y = 2.0,
+        .z = -3.0,
+    });
+
     var y: i32 = 0;
     while (y < windowHeight) : (y += 1) {
         var x: i32 = 0;
@@ -74,12 +85,9 @@ pub fn main() anyerror!void {
             const b: f32 = @intToFloat(f32, y) / @intToFloat(f32, windowHeight);
 
             const ray = camera.createRay(a, b);
-            const intersection = sphere.intersect(ray);
-            if (intersection) |i| {
-                setPixel(surface, x, windowHeight - y - 1, i.material.color.toBgra());
-            } else {
-                setPixel(surface, x, windowHeight - y - 1, 255 << 24);
-            }
+
+            const color = scene.traceRay(ray, 0);
+            setPixel(surface, x, windowHeight - y - 1, color.toBgra());
         }
     }
 
