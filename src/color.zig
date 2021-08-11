@@ -1,12 +1,25 @@
 const std = @import("std");
 
+fn clamp(comptime T: type, a: T, min: T, max: T) T {
+    if (a < min) {
+        return min;
+    }
+    if (a > max) {
+        return max;
+    }
+    return a;
+}
+
 pub const Color = struct {
     red: f32,
     green: f32,
     blue: f32,
 
     pub fn toBgra(self: *const Color) u32 {
-        return 255 << 24 | @floatToInt(u32, 255.99 * self.red) << 16 | @floatToInt(u32, 255.99 * self.green) << 8 | @floatToInt(u32, 255.99 * self.blue);
+        const r = @floatToInt(u32, clamp(f32, 255.0 * self.red, 0.0, 255.0));
+        const g = @floatToInt(u32, clamp(f32, 255.0 * self.green, 0.0, 255.0));
+        const b = @floatToInt(u32, clamp(f32, 255.0 * self.blue, 0.0, 255.0));
+        return 255 << 24 | r << 16 | g << 8 | b;
     }
 
     pub fn black() Color {
@@ -14,6 +27,14 @@ pub const Color = struct {
             .red = 0.0,
             .green = 0.0,
             .blue = 0.0,
+        };
+    }
+
+    pub fn white() Color {
+        return .{
+            .red = 1.0,
+            .green = 1.0,
+            .blue = 1.0,
         };
     }
 
@@ -32,4 +53,10 @@ pub const Color = struct {
             .blue = self.blue * factor,
         };
     }
+};
+
+pub const Material = struct {
+    diffuseColor: Color,
+    reflectColor: Color,
+    specularExponent: f32,
 };

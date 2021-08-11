@@ -2,9 +2,12 @@ const std = @import("std");
 const Vec3 = @import("vector3.zig").Vec3;
 const Camera = @import("camera.zig").Camera;
 const Ray = @import("ray.zig").Ray;
-const Sphere = @import("object.zig").Sphere;
-const Object = @import("object.zig").Object;
 const Scene = @import("scene.zig").Scene;
+const Obj = @import("object.zig");
+const Material = @import("color.zig").Material;
+const Color = @import("color.zig").Color;
+const Sphere = Obj.Sphere;
+const Object = Obj.Object;
 
 const c = @cImport({
     @cInclude("SDL.h");
@@ -50,14 +53,25 @@ pub fn main() anyerror!void {
     const origin: Vec3 = .{ .x = 0.0, .y = 1.0, .z = -6.0 };
     const lookAt: Vec3 = .{ .x = 0.0, .y = 1.0, .z = 0.0 };
     const vup: Vec3 = .{ .x = 0.0, .y = 1.0, .z = 0.0 };
-    const focusDistance: f32 = 1.0;
-    // const focusDistance: f32 = @sqrt(origin.subtract(lookAt).lengthSquared());
+    const focusDistance: f32 = @sqrt(origin.subtract(lookAt).lengthSquared());
     const fieldOfView: f32 = 90.0;
     const aperture: f32 = 0.8;
     const camera: Camera = Camera.new(origin, lookAt, vup, fieldOfView, aspectRatio, aperture, focusDistance);
 
     var scene: Scene = Scene.init();
     defer scene.deinit();
+
+    const ivory = Material{
+        .diffuseColor = .{ .red = 0.1, .green = 0.1, .blue = 0.15 },
+        .reflectColor = .{ .red = 0.85, .green = 0.85, .blue = 0.85 },
+        .specularExponent = 50.0,
+    };
+
+    const rubber = Material{
+        .diffuseColor = .{ .red = 0.3, .green = 0.1, .blue = 0.1 },
+        .reflectColor = Color.black(),
+        .specularExponent = 1000000000000.0,
+    };
 
     try scene.objects.append(Object{
         .sphere = .{
@@ -67,13 +81,7 @@ pub fn main() anyerror!void {
                 .z = 0.0,
             },
             .radius = 2.0,
-            .material = .{
-                .color = .{
-                    .red = 1.0,
-                    .green = 0.0,
-                    .blue = 0.0,
-                },
-            },
+            .material = ivory,
         },
     });
     try scene.objects.append(Object{
@@ -84,13 +92,7 @@ pub fn main() anyerror!void {
                 .z = 2.0,
             },
             .radius = 2.0,
-            .material = .{
-                .color = .{
-                    .red = 1.0,
-                    .green = 0.0,
-                    .blue = 1.0,
-                },
-            },
+            .material = ivory,
         },
     });
     try scene.objects.append(Object{
@@ -105,13 +107,7 @@ pub fn main() anyerror!void {
                 .y = 1.0,
                 .z = 0.0,
             },
-            .material = .{
-                .color = .{
-                    .red = 0.0,
-                    .green = 1.0,
-                    .blue = 1.0,
-                },
-            },
+            .material = rubber,
         },
     });
     try scene.lights.append(.{

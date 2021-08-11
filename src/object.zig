@@ -1,11 +1,7 @@
 const std = @import("std");
 const Vec3 = @import("vector3.zig").Vec3;
 const Ray = @import("ray.zig").Ray;
-const Color = @import("color.zig").Color;
-
-pub const Material = struct {
-    color: Color,
-};
+const Material = @import("color.zig").Material;
 
 pub const Intersection = struct {
     t: f32,

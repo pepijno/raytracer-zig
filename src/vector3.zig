@@ -49,6 +49,10 @@ pub const Vec3 = struct {
     pub fn normalized(self: *const Vec3) Vec3 {
         return self.divide(@sqrt(self.lengthSquared()));
     }
+
+    pub fn reflect(self: *const Vec3, normal: Vec3) Vec3 {
+        return self.subtract(normal.multiply(2.0).multiply(self.innerProduct(normal)));
+    }
 };
 
 test "Vec3 innerProduct should return the inner product" {

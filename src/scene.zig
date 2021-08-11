@@ -7,6 +7,10 @@ const Color = @import("color.zig").Color;
 const Ray = @import("ray.zig").Ray;
 const Vec3 = @import("vector3.zig").Vec3;
 
+fn max(comptime T: type, a: T, b: T) T {
+    return if (a > b) a else b;
+}
+
 pub const Scene = struct {
     objects: ArrayList(Object),
     lights: ArrayList(Vec3),
@@ -39,8 +43,9 @@ pub const Scene = struct {
         return inter;
     }
 
-    fn directIllumination(self: *const Scene, intersection: Intersection) Color {
-        var totalDiffuseColor: Color = Color.black();
+    fn directIllumination(self: *const Scene, originalRayDirection: Vec3, intersection: Intersection) Color {
+        var totalDiffuseColor = Color.black();
+        var totalSpecularColor = Color.black();
 
         for (self.lights.items) |light| {
             const lightDirection = light.subtract(intersection.hitPoint).normalized();
@@ -55,17 +60,20 @@ pub const Scene = struct {
                 }
             }
 
-            var normalFactor = intersection.hitNormal.innerProduct(lightDirection);
-            normalFactor = if (normalFactor > 0.0) normalFactor else 0.0;
-            totalDiffuseColor = totalDiffuseColor.add(intersection.material.color.multiply(normalFactor));
+            var normalFactor = max(f32, 0.0, intersection.hitNormal.innerProduct(lightDirection));
+            totalDiffuseColor = totalDiffuseColor.add(intersection.material.diffuseColor.multiply(normalFactor));
+
+            var specularComponent = max(f32, 0.0, -1.0 * (lightDirection.multiply(-1.0).reflect(intersection.hitNormal).innerProduct(originalRayDirection)));
+            specularComponent = @exp(intersection.material.specularExponent * @log(specularComponent));
+            totalSpecularColor = totalSpecularColor.add(Color.white().multiply(specularComponent));
         }
 
-        return totalDiffuseColor;
+        return totalDiffuseColor.add(totalSpecularColor);
     }
 
     pub fn traceRay(self: *const Scene, ray: Ray, depth: u8) Color {
         if (self.intersectAny(ray)) |intersection| {
-            return self.directIllumination(intersection);
+            return self.directIllumination(ray.direction, intersection);
         } else {
             return Color.black();
         }
